@@ -97,6 +97,7 @@ public class Solver {
             }
         }
 
+        // Make sure members of the same family are assigned to the same days
         final Map<Family, Set<Child>> familyMembers = children.stream()
                 .filter(child -> child.getFamily().isPresent())
                 .collect(Collectors.toMap(child -> child.getFamily().get(), Collections::singleton,
@@ -123,7 +124,8 @@ public class Solver {
                     );
         }
 
-        CpSolver solver = new CpSolver();
+        // Add the requests for specific days as a soft constraint
+        final CpSolver solver = new CpSolver();
         final List<IntVar> requestObjective = new LinkedList<>();
         for (Day day : days) {
             for (Group group : groups) {
@@ -143,13 +145,15 @@ public class Solver {
         int[] coeffs = new int[requestObjective.size()];
         Arrays.fill(coeffs, 1);
         model.maximize(LinearExpr.scalProd(requestObjective.toArray(new IntVar[0]), coeffs));
-        solver.solve(model);
 
+        // Finally, compute the solution
+        solver.solve(model);
 
         System.out.println("Statistics");
         System.out.println("  - Number of requests met = " + ((int)solver.response().getObjectiveValue()) + " out of " + children.stream().flatMap(child -> child.getRequestedDays().stream()).count());
         System.out.println("  - wall time       : " + solver.wallTime() + " s");
 
+        // Construct the solution model
         final Map<Child, Set<Day>> assignments = new HashMap<>();
         for (Child child : children) {
             for (Day day : days) {
@@ -162,9 +166,6 @@ public class Solver {
             }
         }
         return new Solution(assignments);
-
-
-
     }
 
     private int id(Place place) {
