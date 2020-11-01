@@ -12,7 +12,7 @@ public class Group {
 
     public Group(String name, int capacity) {
         this.name = name;
-        this.places = IntStream.range(0,5).mapToObj(i -> new Place()).collect(Collectors.toList());
+        this.places = IntStream.range(0, capacity).mapToObj(i -> new Place()).collect(Collectors.toList());
     }
 
     public Group addChild(Child child) {
