@@ -13,4 +13,8 @@ public class Day implements Comparable<Day> {
     public int compareTo(Day o) {
         return date.compareTo(o.date);
     }
+
+    public LocalDate getDate() {
+        return date;
+    }
 }

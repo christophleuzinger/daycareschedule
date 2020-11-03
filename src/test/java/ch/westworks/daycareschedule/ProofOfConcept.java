@@ -132,13 +132,13 @@ public class ProofOfConcept {
                         .addDay(days.get(6))
                         .addDay(days.get(7)));
 
-        final Input input = new Input(days, Arrays.asList(paradiesvoegel, pandas));
+        final Input input = new Input(new TreeSet<>(days), Arrays.asList(paradiesvoegel, pandas));
         final Solution solution = new Solver(input).solve();
         print(input, solution);
     }
 
     private void print(Input input, Solution solution) {
-        final List<Day> days = input.getDays();
+        final SortedSet<Day> days = input.getDays();
         System.out.println("|Child   |" + " |".repeat(days.size()));
         input.getGroups().forEach(group ->
                 group.getChildren().forEach(

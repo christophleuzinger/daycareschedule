@@ -14,10 +14,23 @@
             <artifactId>google-ortools-java</artifactId>
             <version>7.8.7961</version>
         </dependency>
+
         <dependency>
             <groupId>com.panavis.open-source</groupId>
             <artifactId>ortools-linux-x86-64</artifactId>
             <version>7.8.7959</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>4.1.2</version>
         </dependency>
 
         <dependency>

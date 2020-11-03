@@ -18,7 +18,7 @@ public class Solver {
     private final Set<Family> families;
 
     public Solver(Input input) {
-        days = input.getDays();
+        days = new ArrayList<>(input.getDays());
         groups = input.getGroups();
         children = groups.stream().flatMap(group -> group.getChildren().stream()).collect(Collectors.toUnmodifiableList());
         places = groups.stream().flatMap(group -> group.getPlaces().stream()).collect(Collectors.toUnmodifiableList());
@@ -36,6 +36,7 @@ public class Solver {
         Loader.loadNativeLibraries();
         final CpModel model = new CpModel();
 
+        // initialize model
         for (int d = 0; d < numDays; d++) {
             for (int c = 0; c < numChildren; c++) {
                 for (int p = 0; p < numPlaces; p++) {
@@ -44,6 +45,24 @@ public class Solver {
             }
         }
 
+        addMaxOnePlacePerChildAndDayConstraint(model, variables);
+        addAllPlacesAssignedConstraint(model, variables, numChildren);
+        addFairDistributionConstraint(model, variables);
+        addSiblingConstraint(model, variables);
+        addRequestedDaysObjective(model, variables);
+
+        // Finally, compute the solution
+        final CpSolver solver = new CpSolver();
+        solver.solve(model);
+
+        System.out.println("Statistics");
+        System.out.println("  - Number of requests met = " + ((int) solver.response().getObjectiveValue()) + " out of " + children.stream().flatMap(child -> child.getRequestedDays().stream()).count());
+        System.out.println("  - wall time       : " + solver.wallTime() + " s");
+
+        return getSolution(variables, solver);
+    }
+
+    private void addMaxOnePlacePerChildAndDayConstraint(CpModel model, IntVar[][][] variables) {
         // each child gets one place at the most per day
         for (Day day : days) {
             for (Group group : groups) {
@@ -54,7 +73,9 @@ public class Solver {
                 }
             }
         }
+    }
 
+    private void addAllPlacesAssignedConstraint(CpModel model, IntVar[][][] variables, int numChildren) {
         for (Day day : days) {
             int d = id(day);
             for (Group group : groups) {
@@ -77,7 +98,10 @@ public class Solver {
                 }
             }
         }
+    }
 
+    private void addFairDistributionConstraint(CpModel model, IntVar[][][] variables) {
+        // try to achieve a fair distribution of places among children
         for (Group group : groups) {
             final List<Child> groupChildren = group.getChildren();
             final List<Place> groupPlaces = group.getPlaces();
@@ -96,7 +120,9 @@ public class Solver {
                 model.addLessOrEqual(LinearExpr.sum(assignments.toArray(IntVar[]::new)), model.newConstant(maxDaysPerChild));
             }
         }
+    }
 
+    private void addSiblingConstraint(CpModel model, IntVar[][][] variables) {
         // Make sure members of the same family are assigned to the same days
         final Map<Family, Set<Child>> familyMembers = children.stream()
                 .filter(child -> child.getFamily().isPresent())
@@ -113,19 +139,19 @@ public class Solver {
                     {
                         if (members.size() > 1) {
                             final Child[] children = members.toArray(new Child[0]);
-                            for (int m = 0; m< children.length-1; m++) {
-
+                            for (int m = 0; m < children.length - 1; m++) {
                                 model.addEquality(
                                         LinearExpr.sum(variables[id(day)][id(children[m])]),
-                                        LinearExpr.sum(variables[id(day)][id(children[m+1])]));
+                                        LinearExpr.sum(variables[id(day)][id(children[m + 1])]));
                             }
                         }
                     }
-                    );
+            );
         }
+    }
 
+    private void addRequestedDaysObjective(CpModel model, IntVar[][][] variables) {
         // Add the requests for specific days as a soft constraint
-        final CpSolver solver = new CpSolver();
         final List<IntVar> requestObjective = new LinkedList<>();
         for (Day day : days) {
             for (Group group : groups) {
@@ -145,14 +171,9 @@ public class Solver {
         int[] coeffs = new int[requestObjective.size()];
         Arrays.fill(coeffs, 1);
         model.maximize(LinearExpr.scalProd(requestObjective.toArray(new IntVar[0]), coeffs));
+    }
 
-        // Finally, compute the solution
-        solver.solve(model);
-
-        System.out.println("Statistics");
-        System.out.println("  - Number of requests met = " + ((int)solver.response().getObjectiveValue()) + " out of " + children.stream().flatMap(child -> child.getRequestedDays().stream()).count());
-        System.out.println("  - wall time       : " + solver.wallTime() + " s");
-
+    private Solution getSolution(IntVar[][][] variables, CpSolver solver) {
         // Construct the solution model
         final Map<Child, Set<Day>> assignments = new HashMap<>();
         for (Child child : children) {

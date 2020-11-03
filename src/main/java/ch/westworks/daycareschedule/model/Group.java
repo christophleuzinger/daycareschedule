@@ -25,6 +25,10 @@ public class Group {
     }
 
     public List<Place> getPlaces() {
-        return places;
+        return places.subList(0, Math.min(places.size(), children.size()));
+    }
+
+    public String getName() {
+        return name;
     }
 }
