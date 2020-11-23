@@ -16,12 +16,12 @@ public class XlsxSolver {
     public static final String XLSX_SUFFIX = "." + XLSX;
 
     public static void main(String[] args) {
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Excel", XLSX));
-        fileChooser.setAcceptAllFileFilterUsed(false);
-        fileChooser.showOpenDialog(null);
-
         try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            final JFileChooser fileChooser = new JFileChooser();
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Excel", XLSX));
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.showOpenDialog(null);
             final File file = fileChooser.getSelectedFile();
             if (file != null) {
                 final Input input = new XlsxInputReader().readInput(file);
@@ -34,5 +34,6 @@ public class XlsxSolver {
             JOptionPane.showMessageDialog(null, e.getClass().getSimpleName() + ": " + e.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+
     }
 }
